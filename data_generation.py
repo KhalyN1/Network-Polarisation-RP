@@ -4,7 +4,6 @@ import random
 import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from utils import opinion_split_2_communities, opinion_split_3_communities
 import numpy as np
 import igraph as ig
 from igraph import Graph
@@ -41,7 +40,7 @@ def generate_base_network_LFR(nodes:int, gamma:float, beta:float, mu:float,
             community_IDs[comm] = len(community_IDs)
 
     edges = list(g.edges())
-    ig_g = Graph(n=nodes, edges=edges, directed=True)
+    ig_g = Graph(n=nodes, edges=edges, directed=False)
 
     ig_g.vs['node_type'] = 'actor'
     communities_list = []
@@ -85,7 +84,7 @@ def generate_base_network_SBM(nodes:int=50, communities:int=2, p_in:float=0.15, 
     g = ig.Graph.SBM(
         pref_matrix=pref_matrix,
         block_sizes=block_sizes,
-        directed=True,
+        directed=False,
     )
    
     g.vs['node_type'] = 'actor'
@@ -120,86 +119,7 @@ def assign_initial_platforms(issues:int, p_agree:float, seed=None):
             
     return platforms
 
-
-def add_initial_opinions(g, nodes:int, issues:int, communities:int, p_agree:float, seeds_per_community_ratio:float, seed=None):
-    
-    if seed is not None:
-        random.seed(seed)
-        np.random.seed(seed)
-
-    g.add_vertices(issues)
-
-    for i in range(nodes, nodes + issues):
-        g.vs[i]['node_type'] = 'issue'
-        g.vs[i]['issue_name'] = f"Issue_{i - nodes + 1}"
-        g.vs[i]['community'] = -1 # -1 means community does not apply to issues
-    
-    opinion_edges = []
-    opinion_values = []
-    platforms = assign_initial_platforms(issues, p_agree, seed)
-
-    community_sizes = {}
-    for c in range(communities):
-        actors = [v.index for v in g.vs if v['node_type'] == 'actor' and v['community'] == c]
-        community_sizes[c] = len(actors)
-        
-    # Sort communities by size descending
-    sorted_communities = sorted(community_sizes.items(), key=lambda item: item[1], reverse=True)
-    
-    # Grab the IDs of the top 2 communities
-    target_communities = []
-    if len(sorted_communities) >= 2:
-        target_communities = [sorted_communities[0][0], sorted_communities[1][0]]
-    elif len(sorted_communities) == 1:
-        target_communities = [sorted_communities[0][0]] 
-
-  
-    for c in range(communities): 
-       
-        if c not in target_communities:
-            continue
-            
-       
-        platform_id = 0 if c == target_communities[0] else 1
-        
-        actors = [v.index for v in g.vs if v['node_type'] == 'actor' and v['community'] == c]
-        actual_seeds_count = np.ceil(len(actors) * seeds_per_community_ratio)
-        seeds = random.sample(actors, int(actual_seeds_count))
-        
-        for seed_actor in seeds:
-            for issue_idx in range(issues):
-                issue_node_id = nodes + issue_idx
-                opinion_edges.append((seed_actor, issue_node_id))
-                opinion_values.append(platforms[platform_id][issue_idx])
-    
-   
-    start = g.ecount() 
-    g.add_edges(opinion_edges)
-    for i in range(start, g.ecount()):
-        g.es[i]['edge_type'] = 'attitude'
-        g.es[i]['opinion_val'] = opinion_values[i - start]
-    # for c in range(communities): 
-    #     actors = [v.index for v in g.vs if v['node_type'] == 'actor' and v['community'] == c]
-        
-    #     actual_seeds_count = np.ceil(len(actors) * seeds_per_community_ratio)
-    #     seeds = random.sample(actors, int(actual_seeds_count))
-        
-    #     for seed_actor in seeds:
-    #         for issue_idx in range(issues):
-    #             issue_node_id = nodes + issue_idx
-    #             opinion_edges.append((seed_actor, issue_node_id))
-    #             opinion_values.append(platforms[c][issue_idx])
-    
-    # start = g.ecount() # before adding new edges
-    # g.add_edges(opinion_edges)
-    # for i in range(start, g.ecount()):
-    #     g.es[i]['edge_type'] = 'attitude'
-    #     g.es[i]['opinion_val'] = opinion_values[i - start]
-    
-    return g
-
-
-def add_initial_opinions_new(g, nodes: int, issues: int, communities: int, p_agree: float, seeds_per_community_ratio: float, seed=None):
+def add_initial_opinions(g, nodes: int, issues: int, communities: int, p_agree: float, seeds_per_community_ratio: float, seed=None):
     if seed is not None:
         random.seed(seed)
         np.random.seed(seed)
