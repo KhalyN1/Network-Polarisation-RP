@@ -124,7 +124,7 @@ def visualize_combined_network(g, filename="combined_network.png"):
 ################
 
 
-def plot_relational_polarization_LFR(df_results):
+def plot_relational_polarization_LFR(df_results, output_filename=None):
     """
     Generates a publication-ready line plot for Relational Polarization
     comparing 3 different gamma values using standard error bars.
@@ -175,14 +175,15 @@ def plot_relational_polarization_LFR(df_results):
     ax.legend(title='Scale-Free Hub Exponent', loc='upper right', fontsize=14, frameon=True, edgecolor='gray')
     
     plt.tight_layout()
-    output_filename = f"results/relational_polarization_n{df_results['actors'].iloc[0]}_c{df_results['communities'].iloc[0]}.png"
+    if output_filename is None:
+        output_filename = f"results/relational_polarization_n{df_results['actors'].iloc[0]}_c{df_results['communities'].iloc[0]}.png"
     plt.savefig(output_filename, dpi=300)
     plt.close()
     
     print(f"Relational polarization plot saved to {output_filename}")
 
 
-def plot_ideological_polarization_LFR(df_results):
+def plot_ideological_polarization_LFR(df_results, output_filename=None):
     """
     Generates a publication-ready line plot for Ideological Polarization
     comparing 3 different gamma values using standard error bars.
@@ -226,14 +227,15 @@ def plot_ideological_polarization_LFR(df_results):
     ax.legend(title='Scale-Free Hub Exponent', loc='upper right', fontsize=14, frameon=True, edgecolor='gray')
     
     plt.tight_layout()
-    output_filename = f"results/ideological_polarization_n{df_results['actors'].iloc[0]}_c{df_results['communities'].iloc[0]}.png"
+    if output_filename is None:
+        output_filename = f"results/ideological_polarization_n{df_results['actors'].iloc[0]}_c{df_results['communities'].iloc[0]}.png"
     plt.savefig(output_filename, dpi=300)
     plt.close()
     
     print(f"Ideological polarization plot saved to {output_filename}")
 
 
-def plot_relational_polarization_SBM(df_results):
+def plot_relational_polarization_SBM(df_results, output_filename=None):
   
     
     plt.style.use('seaborn-v0_8-whitegrid')
@@ -278,13 +280,14 @@ def plot_relational_polarization_SBM(df_results):
     ax.legend(title='Number of communities', loc='upper right', fontsize=14, frameon=True, edgecolor='gray')
         
     plt.tight_layout()
-    output_filename = f"results/relational_polarization_n{df_results['actors'].iloc[0]}_sbm.png"
+    if output_filename is None:
+        output_filename = f"results/relational_polarization_n{df_results['actors'].iloc[0]}_sbm.png"
     plt.savefig(output_filename, dpi=300)
     plt.close()
         
     print(f"Relational polarization plot saved to {output_filename}")
 
-def plot_ideological_polarization_SBM(df_results):
+def plot_ideological_polarization_SBM(df_results, output_filename=None):
   
     
     plt.style.use('seaborn-v0_8-whitegrid')
@@ -328,7 +331,8 @@ def plot_ideological_polarization_SBM(df_results):
     ax.legend(title='Number of communities', loc='upper right', fontsize=14, frameon=True, edgecolor='gray')
         
     plt.tight_layout()
-    output_filename = f"results/ideological_polarization_n{df_results['actors'].iloc[0]}_sbm.png"
+    if output_filename is None:
+        output_filename = f"results/ideological_polarization_n{df_results['actors'].iloc[0]}_sbm.png"
     plt.savefig(output_filename, dpi=300)
     plt.close()
         
