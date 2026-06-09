@@ -83,7 +83,7 @@ def simulate_network_evolution(g, nodes: int, issues: int, steps: int = 10, p_re
                                         break
 
                                 if new_social_neighbor is not None:
-                                    edges_to_add.append((actor, social_neighbors))
+                                    edges_to_add.append((actor, new_social_neighbor))
                                     edge_types_to_add.append('social')
                                     opinion_vals_to_add.append(None)
                                 
