@@ -1,8 +1,6 @@
-import random
-import igraph as ig
 from igraph import Graph
 
-def get_cross_density(g):
+def get_cross_density(g: Graph) -> float:
    
     social_edges = g.es.select(edge_type='social')
     total_edges = len(social_edges)

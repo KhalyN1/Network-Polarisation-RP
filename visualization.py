@@ -41,20 +41,30 @@ def visualize_combined_network(g, filename="combined_network.png"):
     num_comms = len(communities)
     comm_centers = {}
     for i, comm in enumerate(communities):
+        
         angle = i * (2 * np.pi / num_comms)
         comm_centers[comm] = (R_OUTER * np.cos(angle), R_OUTER * np.sin(angle))
     
     # Assign coordinates to each node
+    k = 0 
+    nodes = g.vcount()
+    
     for v in g.vs:
         if v['node_type'] == 'issue':
             # Place issues in the center (slightly staggered if there are multiple)
-            ix = random.uniform(-R_INNER, R_INNER)
-            iy = random.uniform(-R_INNER, R_INNER)
+            angle = k * (2 * np.pi / len(issues))
+            ix = R_INNER * np.cos(angle)
+            iy = R_INNER * np.sin(angle)
             layout.append((ix, iy))
+            k += 1
         else:
             # Place actors around their community's designated center coordinate
             cx, cy = comm_centers.get(v['community'], (0,0))
-            # Use normal distribution to create a natural looking cluster
+            # Use normal distribution to create a natural looking cluster\
+            #angle = random.uniform(0, 2 * np.pi)
+            #min_dist = 0.20 * CLUSTER_SPREAD
+            #max_dist = 1 * CLUSTER_SPREAD
+       
             ax = random.gauss(cx, CLUSTER_SPREAD)
             ay = random.gauss(cy, CLUSTER_SPREAD)
             layout.append((ax, ay))
@@ -70,7 +80,7 @@ def visualize_combined_network(g, filename="combined_network.png"):
             comm = v['community']
             node_colors.append(color_map.get(comm, '#CCCCCC'))
             node_shapes.append('circle')
-            node_sizes.append(10)
+            node_sizes.append(15)
             
     g.vs['color'] = node_colors
     g.vs['shape'] = node_shapes
@@ -86,23 +96,23 @@ def visualize_combined_network(g, filename="combined_network.png"):
             
             if source_comm == target_comm:
                 # Internal ties: slightly darker/thicker to show dense clusters
-                edge_colors.append('rgba(150, 150, 150, 0.6)')
+                edge_colors.append('rgba(150, 150, 150, 0.8)')
                 edge_widths.append(0.8)
             else:
                 # Cross-community ties: lighter, matching the dashed look in your image
-                edge_colors.append('rgba(200, 200, 200, 0.5)')
-                edge_widths.append(0.6)
+                edge_colors.append('rgba(200, 200, 200, 0.8)')
+                edge_widths.append(0.8)
                 
         elif e['edge_type'] == 'attitude':
             val = e['opinion_val']
             # Make attitudinal edges semi-transparent so they don't overpower the social structure
             if val == 1:
-                edge_colors.append('rgba(40, 175, 70, 0.45)')  # Transparent Green
+                edge_colors.append('rgba(40, 175, 70, 0.7)')  # Transparent Green
             elif val == -1:
-                edge_colors.append('rgba(202, 45, 45, 0.45)')  # Transparent Red
+                edge_colors.append('rgba(202, 45, 45, 0.7)')  # Transparent Red
             else:
                 edge_colors.append('rgba(0, 0, 0, 0.1)')
-            edge_widths.append(0.4)
+            edge_widths.append(0.8)
             
     g.es['color'] = edge_colors
     g.es['width'] = edge_widths
@@ -127,34 +137,34 @@ def visualize_combined_network(g, filename="combined_network.png"):
 def plot_relational_polarization_LFR(df_results, output_filename=None):
     """
     Generates a publication-ready line plot for Relational Polarization
-    comparing 3 different gamma values using standard error bars.
+    comparing 3 different N values using standard error bars.
     """
     plt.style.use('seaborn-v0_8-whitegrid')
     fig, ax = plt.subplots(figsize=(9, 6))
     
 
-    gamma_values = sorted(df_results['gamma'].unique())
+    N_values = sorted(df_results['actors'].unique())
     
     
-    colors = {2.0: "red", 2.5: "blue", 3.0: "green"}
-    markers = {2.0: 'o', 2.5: 's', 3.0: '^'}
+    colors = {500: "#be0006", 1000: "#0000a2", 5000: "#01c469"}
+    markers = {500: 'o', 1000: 's', 5000: '^'}
     
-    for gamma in gamma_values:
+    for N in N_values:
     
-        df_gamma = df_results[df_results['gamma'] == gamma].sort_values('mu')
+        df_N = df_results[df_results['actors'] == N].sort_values('mu')
         
-        x = df_gamma['mu']
-        y = df_gamma['relational_polarization_mean']
-        y_err = df_gamma['relational_polarization_std']
+        x = df_N['mu']
+        y = df_N['relational_polarization_mean']
+        y_err = df_N['relational_polarization_std']
+        gamma = df_N['gamma'].unique()[0]
+        beta = df_N['beta'].unique()[0]
+       
+        ax.plot(x, y, color=colors.get(N, "#d35400"), label=f'N = {N}', 
+           linewidth=2.0, marker=markers.get(N, 'o'), markersize=6, zorder=3)
         
-        # Plot with explicit error bars instead of a shaded patch
-        # ax.errorbar(x, y, yerr=y_err, color=colors.get(gamma, "#186fac"), 
-        #             label=f'γ = {gamma}', linewidth=2.0, 
-        #             marker=markers.get(gamma, 'o'), markersize=6,
-        #             capsize=4, elinewidth=1.5, markeredgewidth=1.5, zorder=3)
-
-        ax.plot(x, y, color=colors.get(gamma, "#d35400"), label=f'γ = {gamma}', 
-            linewidth=2.0, marker=markers.get(gamma, 'o'), markersize=6, zorder=3)
+        ax.fill_between(x, y - y_err, y + y_err,
+                color=colors.get(N, "#d35400"),
+                alpha=0.15, zorder=2)
         
     # Styling and formatting
     #ax.set_title("The Impact of Scale-Free Exponent (γ) on Relational Polarization", 
@@ -163,20 +173,20 @@ def plot_relational_polarization_LFR(df_results, output_filename=None):
     ax.set_ylabel("Relational Polarization Score", fontsize=16, fontweight='bold', labelpad=10)
     
     props = dict(boxstyle='round', facecolor='white', alpha=0.8, edgecolor='gray')
-    avg_c = round(df_results['avg_communities'].mean(), 1)
-    param_text = f"N = {df_results['actors'].iloc[0]}\nAvg. Communities = {avg_c}"
-    ax.text(0.03, 0.05, param_text, transform=ax.transAxes, fontsize=12,
+    #avg_c = round(df_results['avg_communities'].mean(), 1)
+    param_text = f"γ = {gamma}\n β = {beta}"
+    ax.text(0.03, 0.05, param_text, transform=ax.transAxes, fontsize=15,
         verticalalignment='bottom', bbox=props, zorder=4)
  
     ax.set_ylim(0.0, 1.05)
     ax.set_xlim(left=0.0, right=0.8)
     
     ax.grid(True, linestyle='--', alpha=0.6)
-    ax.legend(title='Scale-Free Hub Exponent', loc='upper right', fontsize=14, frameon=True, edgecolor='gray')
+    ax.legend(title='Network size', loc='upper right', fontsize=17, frameon=True, edgecolor='gray')
     
     plt.tight_layout()
     if output_filename is None:
-        output_filename = f"results/relational_polarization_n{df_results['actors'].iloc[0]}_c{df_results['communities'].iloc[0]}.png"
+        output_filename = f"results/relational_polarization_lfr.png"
     plt.savefig(output_filename, dpi=300)
     plt.close()
     
@@ -186,49 +196,49 @@ def plot_relational_polarization_LFR(df_results, output_filename=None):
 def plot_ideological_polarization_LFR(df_results, output_filename=None):
     """
     Generates a publication-ready line plot for Ideological Polarization
-    comparing 3 different gamma values using standard error bars.
+    comparing 3 different N values using standard error bars.
     """
     plt.style.use('seaborn-v0_8-whitegrid')
     fig, ax = plt.subplots(figsize=(9, 6))
     
-    gamma_values = sorted(df_results['gamma'].unique())
+    N_values = sorted(df_results['actors'].unique())
     
-    colors = {2.0: "red", 2.5: "blue", 3.0: "green"}
-    markers = {2.0: 'o', 2.5: 's', 3.0: '^'}
+    colors = {500: "#be0006", 1000: "#0000a2", 5000: "#01c469"}
+    markers = {500: 'o', 1000: 's', 5000: '^'}
     
-    for gamma in gamma_values:
-        df_gamma = df_results[df_results['gamma'] == gamma].sort_values('mu')
+    for N in N_values:
+        df_N = df_results[df_results['actors'] == N].sort_values('mu')
         
-        x = df_gamma['mu']
-        y = df_gamma['ideological_polarization_mean']
-        y_err = df_gamma['ideological_polarization_std']
+        x = df_N['mu']
+        y = df_N['ideological_polarization_mean']
+        y_err = df_N['ideological_polarization_std']
+        gamma = df_N['gamma'].unique()[0]
+        beta = df_N['beta'].unique()[0]
+        ax.plot(x, y, color=colors.get(N, "#d35400"), label=f'N = {N}', 
+            linewidth=2.0, marker=markers.get(N, 'o'), markersize=6, zorder=3)
         
-        ax.plot(x, y, color=colors.get(gamma, "#d35400"), label=f'γ = {gamma}', 
-            linewidth=2.0, marker=markers.get(gamma, 'o'), markersize=6, zorder=3)
-        
-        # ax.errorbar(x, y, yerr=y_err, color=colors.get(gamma, "#d35400"), 
-        #             label=f'γ = {gamma}', linewidth=2.0, 
-        #             marker=markers.get(gamma, 'o'), markersize=6,
-        #             capsize=4, elinewidth=1.5, markeredgewidth=1.5, zorder=3)
-
+        ax.fill_between(x, y - y_err, y + y_err,
+                color=colors.get(N, "#d35400"),
+                alpha=0.15, zorder=2)
+    
     ax.set_xlabel("Cross-community Mixing Parameter μ", fontsize=16, fontweight='bold', labelpad=10)
     ax.set_ylabel("Ideological Polarization Score", fontsize=16, fontweight='bold', labelpad=10)
     
     props = dict(boxstyle='round', facecolor='white', alpha=0.8, edgecolor='gray')
-    avg_c = round(df_results['avg_communities'].mean(), 1)
-    param_text = f"N = {df_results['actors'].iloc[0]}\nAvg. Communities = {avg_c}"
-    ax.text(0.03, 0.05, param_text, transform=ax.transAxes, fontsize=12,
+    #avg_c = round(df_results['avg_communities'].mean(), 1)
+    param_text = f"γ = {gamma}\n β = {beta}"
+    ax.text(0.03, 0.05, param_text, transform=ax.transAxes, fontsize=15,
             verticalalignment='bottom', bbox=props, zorder=4)
     
     ax.set_ylim(0, 1.05)
     ax.set_xlim(left=0, right=0.8)
     
     ax.grid(True, linestyle='--', alpha=0.6)
-    ax.legend(title='Scale-Free Hub Exponent', loc='upper right', fontsize=14, frameon=True, edgecolor='gray')
+    ax.legend(title='Network size', loc='upper right', fontsize=17, frameon=True, edgecolor='gray')
     
     plt.tight_layout()
     if output_filename is None:
-        output_filename = f"results/ideological_polarization_n{df_results['actors'].iloc[0]}_c{df_results['communities'].iloc[0]}.png"
+        output_filename = f"results/ideological_polarization_lfr.png"
     plt.savefig(output_filename, dpi=300)
     plt.close()
     
@@ -243,7 +253,7 @@ def plot_relational_polarization_SBM(df_results, output_filename=None):
         
     communities = sorted(df_results['communities'].unique())
         
-    colors = {2: "red", 4: "blue", 8: "green"}
+    colors = {2: "#be0006", 4: "#0000a2", 8: "#01c469"}
     markers = {2: 'o', 4: 's', 8: '^'}
         
     for comm_no in communities:
@@ -269,7 +279,7 @@ def plot_relational_polarization_SBM(df_results, output_filename=None):
     props = dict(boxstyle='round', facecolor='white', alpha=0.8, edgecolor='gray')
    
     param_text = f"N = {df_results['actors'].iloc[0]}"
-    ax.text(0.03, 0.05, param_text, transform=ax.transAxes, fontsize=12,
+    ax.text(0.03, 0.05, param_text, transform=ax.transAxes, fontsize=15,
             verticalalignment='bottom', bbox=props, zorder=4)
     
         
@@ -277,7 +287,7 @@ def plot_relational_polarization_SBM(df_results, output_filename=None):
     ax.set_xlim(left=0.0, right=0.8)
         
     ax.grid(True, linestyle='--', alpha=0.6)
-    ax.legend(title='Number of communities', loc='upper right', fontsize=14, frameon=True, edgecolor='gray')
+    ax.legend(title='Number of communities', loc='upper right', fontsize=17, frameon=True, edgecolor='gray')
         
     plt.tight_layout()
     if output_filename is None:
@@ -295,7 +305,7 @@ def plot_ideological_polarization_SBM(df_results, output_filename=None):
         
     communities = sorted(df_results['communities'].unique())
         
-    colors = {2: "red", 4: "blue", 8: "green"}
+    colors = {2: "#be0006", 4: "#0000a2", 8: "#01c469"}
     markers = {2: 'o', 4: 's', 8: '^'}
         
     for comm_no in communities:
@@ -321,14 +331,14 @@ def plot_ideological_polarization_SBM(df_results, output_filename=None):
     props = dict(boxstyle='round', facecolor='white', alpha=0.8, edgecolor='gray')
     
     param_text = f"N = {df_results['actors'].iloc[0]}"
-    ax.text(0.03, 0.05, param_text, transform=ax.transAxes, fontsize=12,
+    ax.text(0.03, 0.05, param_text, transform=ax.transAxes, fontsize=15,
             verticalalignment='bottom', bbox=props, zorder=4)
         
     ax.set_ylim(0.0, 1.05)
     ax.set_xlim(left=0.0, right=0.8)
         
     ax.grid(True, linestyle='--', alpha=0.6)
-    ax.legend(title='Number of communities', loc='upper right', fontsize=14, frameon=True, edgecolor='gray')
+    ax.legend(title='Number of communities', loc='upper right', fontsize=17, frameon=True, edgecolor='gray')
         
     plt.tight_layout()
     if output_filename is None:
