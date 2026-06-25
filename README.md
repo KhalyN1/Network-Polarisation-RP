@@ -1,4 +1,4 @@
-# Detecting network polarisation using cross-community social tie
+# Detecting network polarisation using cross-community social ties
 
 #### This repository was made as part of the 2025-2026 Edition of the CSE3000 Research Project course at the Delft University of Technology.
 
